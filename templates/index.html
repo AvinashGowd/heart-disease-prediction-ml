@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Heart Disease Predictor</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Heart Disease Predictor</h1>
+            <p>Enter your medical details below to get a prediction.</p>
+            <button type="button" id="helpBtn" class="btn-help">Need Help? View Guide</button>
+        </div>
+
+        <form action="{{ url_for('predict')}}" method="post" id="predictForm">
+            <div class="input-grid">
+                <div class="input-group">
+                    <label for="age" class="tooltip" data-tip="The patient's age in years">Age</label>
+                    <input type="number" id="age" name="age" placeholder="e.g. 45" required value="{{ request.form.get('age', '') }}">
+                </div>
+                <div class="input-group">
+                    <label for="cp" class="tooltip" data-tip="0: Typical Angina, 1: Atypical, 2: Non-anginal, 3: Asymptomatic">Chest Pain Type (0-3)</label>
+                    <input type="number" id="cp" name="cp" min="0" max="3" placeholder="0-3" required value="{{ request.form.get('cp', '') }}">
+                </div>
+                <div class="input-group">
+                    <label for="trestbps" class="tooltip" data-tip="Resting blood pressure (mm Hg). Normal is approx 120/80">Resting Blood Pressure</label>
+                    <input type="number" id="trestbps" name="trestbps" placeholder="e.g. 120" required value="{{ request.form.get('trestbps', '') }}">
+                </div>
+                <div class="input-group">
+                    <label for="chol" class="tooltip" data-tip="Serum cholesterol in mg/dl. Healthy is usually < 200">Cholesterol (mg/dl)</label>
+                    <input type="number" id="chol" name="chol" placeholder="e.g. 200" required value="{{ request.form.get('chol', '') }}">
+                </div>
+                <div class="input-group">
+                    <label for="thalach" class="tooltip" data-tip="Maximum heart rate achieved during exercise">Max Heart Rate</label>
+                    <input type="number" id="thalach" name="thalach" placeholder="e.g. 150" required value="{{ request.form.get('thalach', '') }}">
+                </div>
+                <div class="input-group">
+                    <label for="exang" class="tooltip" data-tip="Chest pain during exercise? 1 = Yes, 0 = No">Exercise Induced Angina (0/1)</label>
+                    <input type="number" id="exang" name="exang" min="0" max="1" placeholder="0 or 1" required value="{{ request.form.get('exang', '') }}">
+                </div>
+                <div class="input-group">
+                    <label for="oldpeak" class="tooltip" data-tip="ST depression induced by exercise relative to rest (0 - 6.2)">ST Depression (Oldpeak)</label>
+                    <input type="number" step="0.1" id="oldpeak" name="oldpeak" placeholder="e.g. 1.0" required value="{{ request.form.get('oldpeak', '') }}">
+                </div>
+                <div class="input-group">
+                    <label for="ca" class="tooltip" data-tip="Number of major vessels (0-3) colored by fluoroscopy">Major Vessels (0-3)</label>
+                    <input type="number" id="ca" name="ca" min="0" max="3" placeholder="0-3" required value="{{ request.form.get('ca', '') }}">
+                </div>
+                <div class="input-group">
+                    <label for="thal" class="tooltip" data-tip="Blood disorder type. 0-3 (Normal, Fixed, Reversible)">Thalassemia (0-3)</label>
+                    <input type="number" id="thal" name="thal" min="0" max="3" placeholder="0-3" required value="{{ request.form.get('thal', '') }}">
+                </div>
+            </div>
+
+            <div class="btn-group">
+                <button type="submit" class="btn-predict">Predict Risk</button>
+                <a href="/" class="btn-reset">Reset</a>
+            </div>
+        </form>
+
+        {% if prediction_text %}
+        <div class="result {{ prediction_class }}">
+            <h2>{{ prediction_text }}</h2>
+            {% if prediction_prob %}
+            <p class="prob-score">Probability: {{ prediction_prob }}</p>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loader" class="loader-overlay">
+        <div class="spinner"></div>
+        <p>Analyzing Heart Health...</p>
+    </div>
+
+    <!-- Help Modal -->
+    <div id="helpModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Input Field Guide</h2>
+            <div class="guide-grid">
+                <div class="guide-item">
+                    <strong>Age</strong>
+                    <p>The patient's age in years.</p>
+                </div>
+                <div class="guide-item">
+                    <strong>Chest Pain Type (cp)</strong>
+                    <p>0: Typical Angina<br>1: Atypical Angina<br>2: Non-anginal Pain<br>3: Asymptomatic</p>
+                </div>
+                <div class="guide-item">
+                    <strong>Resting BP (trestbps)</strong>
+                    <p>Resting blood pressure (mm Hg).<br>Normal is approx 120/80.</p>
+                </div>
+                <div class="guide-item">
+                    <strong>Cholesterol (chol)</strong>
+                    <p>Serum cholesterol in mg/dl.<br>Healthy is usually < 200.</p>
+                </div>
+                <div class="guide-item">
+                    <strong>Max Heart Rate (thalach)</strong>
+                    <p>Maximum heart rate achieved during exercise.</p>
+                </div>
+                <div class="guide-item">
+                    <strong>Ex. Induced Angina (exang)</strong>
+                    <p>Chest pain during exercise?<br>1 = Yes, 0 = No.</p>
+                </div>
+                <div class="guide-item">
+                    <strong>ST Depression (oldpeak)</strong>
+                    <p>ST depression induced by exercise relative to rest (0 - 6.2).</p>
+                </div>
+                <div class="guide-item">
+                    <strong>Major Vessels (ca)</strong>
+                    <p>Number of major vessels (0-3) colored by fluoroscopy.</p>
+                </div>
+                <div class="guide-item">
+                    <strong>Thalassemia (thal)</strong>
+                    <p>Blood disorder type.<br>0-3 (Normal, Fixed, Reversible).</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Get the modal
+        var modal = document.getElementById("helpModal");
+
+        // Get the button that opens the modal
+        var btn = document.getElementById("helpBtn");
+
+        // Get the <span> element that closes the modal
+        var span = document.getElementsByClassName("close")[0];
+
+        // When the user clicks the button, open the modal 
+        btn.onclick = function() {
+            modal.style.display = "block";
+        }
+
+        // When the user clicks on <span> (x), close the modal
+        span.onclick = function() {
+            modal.style.display = "none";
+        }
+
+        // When the user clicks anywhere outside of the modal, close it
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+
+        // Loading Animation
+        document.getElementById('predictForm').onsubmit = function() {
+            document.getElementById('loader').style.display = 'flex';
+        };
+    </script>
+</body>
+</html>
